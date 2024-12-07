@@ -20,6 +20,7 @@ function genRandomTree(N = 300, reverse = false) {
 function Bar(props: {
   value: string;
   onValueChange: (newValue: string) => void;
+  onValueSubmit: (currentValue: string) => void;
 }) {
   return (
     <div className="absolute inset-x-0 bottom-0 bg-white">
@@ -37,6 +38,7 @@ function Bar(props: {
           className="w-10 h-10 ms-2 rounded-full bg-blue-100"
           variant="ghost"
           size="icon"
+          onClick={() => props.onValueSubmit(props.value)}
         >
           <SendIcon />
         </Button>
@@ -45,40 +47,86 @@ function Bar(props: {
   );
 }
 
-export default function Home() {
-  const myGraph = {
-    nodes: [0, 1, 2, 3, 4, 5, 6, 7].map((i) => {
-      return { id: i, name: "Node: 猫ちゃん" + String(i) };
-    }),
+function newGraph() {
+  return { nodes: [], links: [] };
+}
 
-    links: [
-      [0, 1],
-      [1, 2],
-      [2, 1],
-      [0, 2],
-      [0, 3],
-      [0, 3],
-      [0, 4],
-      [4, 5],
-      [4, 7],
-      [5, 6],
-      [7, 6],
-      [6, 7],
-    ].map((p, i) => {
-      return {
-        source: p[0],
-        target: p[1],
-        name: "Some Link " + String(p[0]) + `<${i}>` + String(p[1]),
-      };
-    }),
+function addNode(graph, node) {
+  return {
+    nodes: [...graph.nodes, node],
+    links: graph.links,
   };
+}
+
+function addLink(graph, link) {
+  return {
+    nodes: graph.nodes,
+    links: [...graph.links, link],
+  };
+}
+
+function addLink2(graph, nodeA, nodeB) {
+  return {
+    nodes: graph.nodes,
+    links: [
+      ...graph.links,
+      {
+        source: nodeA.id,
+        target: nodeB.id,
+      },
+    ],
+  };
+}
+
+function getAllQuoted(sentence: string): string[] {
+  const regexp = /「(.*?)」/g;
+  const matches = [...sentence.matchAll(regexp)].map((m) => m[1]);
+
+  console.log(matches);
+  return matches;
+}
+
+function getFocused(sentence: string): string[] {
+  const regexp = /『(.*?)』/g;
+  const matches = [...sentence.matchAll(regexp)].map((m) => m[1]);
+
+  console.log(matches);
+  return matches;
+}
+
+export default function Home() {
+  // const myGraph = {
+  //   nodes: [0, 1, 2, 3, 4, 5, 6, 7].map((i) => {
+  //     return { id: i, name: "Node: 猫ちゃん" + String(i) };
+  //   }),
+
+  //   links: [
+  //     [0, 1],
+  //     [1, 2],
+  //     [2, 1],
+  //     [0, 2],
+  //     [0, 3],
+  //     [0, 3],
+  //     [0, 4],
+  //     [4, 5],
+  //     [4, 7],
+  //     [5, 6],
+  //     [7, 6],
+  //     [6, 7],
+  //   ].map((p, i) => {
+  //     return {
+  //       source: p[0],
+  //       target: p[1],
+  //       name: "Some Link " + String(p[0]) + `<${i}>` + String(p[1]),
+  //     };
+  //   }),
+  // };
+
+  const [myGraph, setMyGraph] = useState(newGraph());
 
   const theGraph = useMemo(() => myGraph, []);
 
   const rndGraph = genRandomTree(1_000);
-
-  console.log("data looks like", genRandomTree(4));
-  console.log("mine looks like", myGraph);
 
   // const [winWidth, winHeight] = useWindowSize();
   const [winWidth, winHeight] = [window.innerWidth, window.innerHeight];
@@ -90,7 +138,7 @@ export default function Home() {
         <ForceGraph2D
           width={winWidth}
           height={winHeight}
-          graphData={theGraph}
+          graphData={myGraph}
           linkCurvature={0.3}
           linkDirectionalArrowLength={5}
           nodeCanvasObjectMode={() => "after"}
@@ -109,7 +157,47 @@ export default function Home() {
         />
       </div>
 
-      <Bar value={sentence} onValueChange={(e) => setSentence(e)} />
+      <Bar
+        value={sentence}
+        onValueChange={(e) => {
+          setSentence(e);
+          getAllQuoted(e);
+          getFocused(e);
+        }}
+        onValueSubmit={(sentence) => {
+          const targetWords = getAllQuoted(sentence);
+          const focusedWord = getFocused(sentence)[0]; // todo: find checks
+
+          console.log("targetWords", targetWords);
+          console.log("focusedWord", focusedWord);
+
+          const nodes = [...targetWords, focusedWord].map((w) => {
+            return {
+              id: w,
+              name: w,
+            };
+          });
+          const links = targetWords.map((w) => {
+            return {
+              source: focusedWord,
+              target: w,
+            };
+          });
+
+          let graph = myGraph;
+          for (const node of nodes) {
+            graph = addNode(graph, node);
+          }
+
+          for (const link of links) {
+            graph = addLink(graph, link);
+          }
+
+          console.log("graph", graph);
+
+          setMyGraph(graph);
+        }}
+      />
     </div>
   );
 }
