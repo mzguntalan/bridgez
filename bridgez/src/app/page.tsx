@@ -4,6 +4,7 @@ import React, { useState, useMemo, useRef } from "react";
 import { Textarea } from "@/components/ui/textarea";
 import { SendIcon } from "lucide-react";
 import { ForceGraph3D, ForceGraph2D } from "react-force-graph";
+import { List } from "postcss/lib/list";
 
 function genRandomTree(N = 300, reverse = false) {
   return {
@@ -47,18 +48,34 @@ function Bar(props: {
   );
 }
 
-function newGraph() {
+function newGraph(): Graph {
   return { nodes: [], links: [] };
 }
+interface Node {
+  id: string;
+  name: string;
+}
+interface Link {
+  source: string;
+  target: string;
+}
+interface Graph {
+  nodes: Node[];
+  links: Link[];
+}
 
-function addNode(graph, node) {
+function addNode(graph: Graph, node: Node): Graph {
+  const index = graph.nodes.findIndex((v) => v.id === node.id);
+  if (index !== -1) {
+    return graph;
+  }
   return {
     nodes: [...graph.nodes, node],
     links: graph.links,
   };
 }
 
-function addLink(graph, link) {
+function addLink(graph: Graph, link: Link) {
   return {
     nodes: graph.nodes,
     links: [...graph.links, link],
