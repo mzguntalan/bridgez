@@ -12,7 +12,9 @@ function Bar(props: {
 }) {
   return (
     <div className="absolute inset-x-0 bottom-0 bg-white">
-      <div className="bg-blue-100 px-10 py-2">Toolbar</div>
+      <div className="bg-blue-100 px-10 py-2 text-center text-slate-500">
+        Version 0.0.0
+      </div>
       <div className=" px-10 py-5 flex items-center">
         <Textarea
           className="flex-1 resize-none "
@@ -113,7 +115,7 @@ export default function Home() {
             ctx.fillText(label, node.x, node.y + 10);
           }}
           onNodeClick={(node, event) => {
-            setSentence(node.name);
+            setSentence(sentence + node.name);
           }}
         />
       </div>
