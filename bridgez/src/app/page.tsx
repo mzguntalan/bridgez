@@ -89,6 +89,10 @@ function parseJp(sentence: string) {
   throw new Error("Function not implemented.");
 }
 
+function surrondWithQuotes(word: string): string {
+  return `「${word}」`;
+}
+
 export default function Home() {
   const [myGraph, setMyGraph] = useState(newGraph());
 
@@ -115,7 +119,7 @@ export default function Home() {
             ctx.fillText(label, node.x, node.y + 10);
           }}
           onNodeClick={(node, event) => {
-            setSentence(sentence + node.name);
+            setSentence(sentence + surrondWithQuotes(node.name));
           }}
         />
       </div>
