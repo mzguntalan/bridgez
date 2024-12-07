@@ -4,20 +4,6 @@ import React, { useState, useMemo, useRef } from "react";
 import { Textarea } from "@/components/ui/textarea";
 import { SendIcon } from "lucide-react";
 import { ForceGraph3D, ForceGraph2D } from "react-force-graph";
-import { List } from "postcss/lib/list";
-import { argv0 } from "process";
-
-function genRandomTree(N = 300, reverse = false) {
-  return {
-    nodes: [...Array(N).keys()].map((i) => ({ id: i, name: "ありがとう" })),
-    links: [...Array(N).keys()]
-      .filter((id) => id)
-      .map((id) => ({
-        [reverse ? "target" : "source"]: id,
-        [reverse ? "source" : "target"]: Math.round(Math.random() * (id - 1)),
-      })),
-  };
-}
 
 function Bar(props: {
   value: string;
@@ -83,19 +69,6 @@ function addLink(graph: Graph, link: Link) {
   };
 }
 
-function addLink2(graph, nodeA, nodeB) {
-  return {
-    nodes: graph.nodes,
-    links: [
-      ...graph.links,
-      {
-        source: nodeA.id,
-        target: nodeB.id,
-      },
-    ],
-  };
-}
-
 function getAllQuoted(sentence: string): string[] {
   const regexp = /「(.*?)」/g;
   const matches = [...sentence.matchAll(regexp)].map((m) => m[1]);
@@ -108,6 +81,10 @@ function getFocused(sentence: string): string[] {
   const matches = [...sentence.matchAll(regexp)].map((m) => m[1]);
 
   return matches;
+}
+
+function parseJp(sentence: string) {
+  throw new Error("Function not implemented.");
 }
 
 export default function Home() {
@@ -153,7 +130,11 @@ export default function Home() {
           let focusedWord = getFocused(sentence)[0]; // todo: find checks
 
           if (focusedWord === undefined) {
-            if (targetWords.length === 0) return;
+            if (targetWords.length === 0) {
+              let newSentence = parseJp(sentence);
+              setSentence(newSentence);
+              return;
+            }
 
             focusedWord = targetWords.at(-1) ?? "";
             targetWords = targetWords.slice(0, -1);
