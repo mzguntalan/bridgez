@@ -5,6 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { SendIcon } from "lucide-react";
 import { ForceGraph3D, ForceGraph2D } from "react-force-graph";
 import { List } from "postcss/lib/list";
+import { argv0 } from "process";
 
 function genRandomTree(N = 300, reverse = false) {
   return {
@@ -99,7 +100,6 @@ function getAllQuoted(sentence: string): string[] {
   const regexp = /「(.*?)」/g;
   const matches = [...sentence.matchAll(regexp)].map((m) => m[1]);
 
-  console.log(matches);
   return matches;
 }
 
@@ -107,45 +107,12 @@ function getFocused(sentence: string): string[] {
   const regexp = /『(.*?)』/g;
   const matches = [...sentence.matchAll(regexp)].map((m) => m[1]);
 
-  console.log(matches);
   return matches;
 }
 
 export default function Home() {
-  // const myGraph = {
-  //   nodes: [0, 1, 2, 3, 4, 5, 6, 7].map((i) => {
-  //     return { id: i, name: "Node: 猫ちゃん" + String(i) };
-  //   }),
-
-  //   links: [
-  //     [0, 1],
-  //     [1, 2],
-  //     [2, 1],
-  //     [0, 2],
-  //     [0, 3],
-  //     [0, 3],
-  //     [0, 4],
-  //     [4, 5],
-  //     [4, 7],
-  //     [5, 6],
-  //     [7, 6],
-  //     [6, 7],
-  //   ].map((p, i) => {
-  //     return {
-  //       source: p[0],
-  //       target: p[1],
-  //       name: "Some Link " + String(p[0]) + `<${i}>` + String(p[1]),
-  //     };
-  //   }),
-  // };
-
   const [myGraph, setMyGraph] = useState(newGraph());
 
-  const theGraph = useMemo(() => myGraph, []);
-
-  const rndGraph = genRandomTree(1_000);
-
-  // const [winWidth, winHeight] = useWindowSize();
   const [winWidth, winHeight] = [window.innerWidth, window.innerHeight];
   const [sentence, setSentence] = useState("");
 
@@ -182,11 +149,15 @@ export default function Home() {
           getFocused(e);
         }}
         onValueSubmit={(sentence) => {
-          const targetWords = getAllQuoted(sentence);
-          const focusedWord = getFocused(sentence)[0]; // todo: find checks
+          let targetWords = getAllQuoted(sentence);
+          let focusedWord = getFocused(sentence)[0]; // todo: find checks
 
-          console.log("targetWords", targetWords);
-          console.log("focusedWord", focusedWord);
+          if (focusedWord === undefined) {
+            if (targetWords.length === 0) return;
+
+            focusedWord = targetWords.at(-1) ?? "";
+            targetWords = targetWords.slice(0, -1);
+          }
 
           const nodes = [...targetWords, focusedWord].map((w) => {
             return {
@@ -209,8 +180,6 @@ export default function Home() {
           for (const link of links) {
             graph = addLink(graph, link);
           }
-
-          console.log("graph", graph);
 
           setMyGraph(graph);
         }}
