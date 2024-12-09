@@ -1,9 +1,10 @@
 "use client";
 import { Button } from "@/components/ui/button";
-import React, { useState, useMemo, useRef } from "react";
+import React, { useState, useMemo, useRef, useEffect } from "react";
 import { Textarea } from "@/components/ui/textarea";
 import { SendIcon } from "lucide-react";
 import { ForceGraph3D, ForceGraph2D } from "react-force-graph";
+import { link, unwatchFile } from "fs";
 
 function Bar(props: {
   value: string;
@@ -85,19 +86,87 @@ function getFocused(sentence: string): string[] {
   return matches;
 }
 
-function parseJp(sentence: string) {
-  throw new Error("Function not implemented.");
-}
-
 function surrondWithQuotes(word: string): string {
   return `「${word}」`;
 }
 
-export default function Home() {
-  const [myGraph, setMyGraph] = useState(newGraph());
+async function postWord(word: string): Promise<Response> {
+  console.log(JSON.stringify({ id: word, name: word }));
+  try {
+    const response = await fetch("http://localhost:8080/word/add", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ id: word, name: word }),
+    });
 
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    return response;
+  } catch (error) {
+    console.error("Fetch failed:", error);
+    throw error;
+  }
+}
+
+async function postLink(source: string, target: string): Promise<Response> {
+  try {
+    const response = await fetch("http://localhost:8080/link/add", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ source: source, target: target }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    return response;
+  } catch (error) {
+    console.error("Fetch failed:", error);
+    throw error;
+  }
+}
+
+export default function Home() {
   const [winWidth, winHeight] = [window.innerWidth, window.innerHeight];
   const [sentence, setSentence] = useState("");
+
+  const [words, setWords] = useState<Node[] | undefined>(undefined);
+  const [links, setLinks] = useState<Link[] | undefined>(undefined);
+  const [myGraph, setMyGraph] = useState(newGraph());
+
+  useEffect(() => {
+    fetch("http://localhost:8080/words")
+      .then((response) => response.json())
+      .then((data) => {
+        console.log("words", data);
+        setWords(structuredClone(data));
+        setMyGraph({
+          nodes: structuredClone(data),
+          links: myGraph.links,
+        });
+      });
+  }, []);
+
+  useEffect(() => {
+    if (words === undefined) return;
+    fetch("http://localhost:8080/links")
+      .then((response) => response.json())
+      .then((data) => {
+        console.log("links", data);
+        setLinks(structuredClone(data));
+        setMyGraph({
+          nodes: myGraph.nodes,
+          links: structuredClone(data),
+        });
+      });
+  }, [words]);
 
   return (
     <div className=" flex flex-col min-h-screen ">
@@ -137,8 +206,7 @@ export default function Home() {
 
           if (focusedWord === undefined) {
             if (targetWords.length === 0) {
-              let newSentence = parseJp(sentence);
-              setSentence(newSentence);
+              alert("quote something please");
               return;
             }
 
@@ -162,10 +230,12 @@ export default function Home() {
           let graph = myGraph;
           for (const node of nodes) {
             graph = addNode(graph, node);
+            postWord(node.id);
           }
 
           for (const link of links) {
             graph = addLink(graph, link);
+            postLink(link.source, link.target);
           }
 
           setMyGraph(graph);

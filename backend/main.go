@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -132,7 +133,15 @@ func getAllWordsAsNodeReactForceGraph(dbpool *pgxpool.Pool) (results []NodeReact
     return results, nil
 }
 
+
+func enableCors(w *http.ResponseWriter) {
+    (*w).Header().Set("Access-Control-Allow-Origin", "*")
+    (*w).Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS, PUT, DELETE")
+    (*w).Header().Set("Access-Control-Allow-Headers", "Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With")
+}
+
 func handleGetAllWords(w http.ResponseWriter, r *http.Request, dbpool *pgxpool.Pool) {
+    enableCors(&w)
     wordsAsNodes, err := getAllWordsAsNodeReactForceGraph(dbpool)
     if err != nil {
         panic("Error has occured!")
@@ -164,7 +173,9 @@ func getAllLinksAsLinkReactForceGraph(dbpool *pgxpool.Pool) (results []LinkReact
     return results, nil
 }
 
+
 func handleGetAllLinks(w http.ResponseWriter, r *http.Request, dbpool *pgxpool.Pool) {
+    enableCors(&w)
     links, err := getAllLinksAsLinkReactForceGraph(dbpool)
     if err != nil {
         panic("Something happened and it shouldn't have happened.")
@@ -175,11 +186,22 @@ func handleGetAllLinks(w http.ResponseWriter, r *http.Request, dbpool *pgxpool.P
 }
 
 func handlePostNode(w http.ResponseWriter, r *http.Request, dbpool *pgxpool.Pool) {
-    decoder := json.NewDecoder(r.Body)
-    var t NodeReactForceGraph
-    err := decoder.Decode(&t)
+    enableCors(&w)
+    if r.Method != "POST" {
+        return
+    }
+
+    body, err := io.ReadAll(r.Body)
+    defer r.Body.Close()
     if err != nil {
-        panic("handling node post gone wrong")
+        panic("panicked while reading node post")
+    }
+
+    var t NodeReactForceGraph
+    err = json.Unmarshal(body, &t)
+    log.Println(t.Id, t.Name)
+    if err != nil {
+        panic("panicked while unmarshal node post")
     }
 
     repr := t.Id
@@ -187,23 +209,36 @@ func handlePostNode(w http.ResponseWriter, r *http.Request, dbpool *pgxpool.Pool
     if err != nil {
         panic("panic at inserting the word")
     }
+    w.WriteHeader(http.StatusOK)
 }
 
 
 func handlePostLink(w http.ResponseWriter, r *http.Request, dbpool *pgxpool.Pool) {
-    decoder := json.NewDecoder(r.Body)
-    var t  LinkReactForceGraph   
-    err := decoder.Decode(&t)
+    enableCors(&w)
+    if r.Method != "POST" {
+        return
+    }
+
+    body, err := io.ReadAll(r.Body)
+    defer r.Body.Close()
     if err != nil {
-        panic("handling node post gone wrong")
+        panic("panicked while reading link post")
+    }
+
+    var t LinkReactForceGraph
+    err = json.Unmarshal(body, &t)
+    log.Println("link", t.Source, t.Target)
+    if err != nil {
+        panic("panicked while unmarshal link post")
     }
 
     source := t.Source
     target := t.Target
     err = insertLinkToDB(dbpool, findWordInDB(dbpool, source), findWordInDB(dbpool, target)) 
     if err != nil {
-        panic("panic at inserting the word")
+        panic("panic at inserting the link")
     }
+    w.WriteHeader(http.StatusOK)
 }
 
 func main() {
@@ -280,6 +315,8 @@ func main() {
     http.HandleFunc("/", handler)
     http.HandleFunc("/words", func(w http.ResponseWriter, r *http.Request){handleGetAllWords(w, r, dbpool)})
     http.HandleFunc("/links", func(w http.ResponseWriter, r *http.Request){handleGetAllLinks(w, r, dbpool)})
+    http.HandleFunc("/word/add", func(w http.ResponseWriter, r *http.Request){handlePostNode(w, r, dbpool)})
+    http.HandleFunc("/link/add", func(w http.ResponseWriter, r *http.Request){handlePostLink(w, r, dbpool)})
     log.Fatal(http.ListenAndServe(":8080", nil))
 
 }
