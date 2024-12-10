@@ -4,7 +4,7 @@ graph-centric app for language learning
 
 ## Demo
 
-here
+[![Watch the video](https://raw.githubusercontent.com/mzguntalan/media_for_other_repo/refs/heads/main/bridgez/thumbnail.png)](https://raw.githubusercontent.com/mzguntalan/media_for_other_repo/refs/heads/main/bridgez/bridgez_demo.mov)
 
 ## Setup
 
