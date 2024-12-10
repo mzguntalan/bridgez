@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -257,61 +256,7 @@ func main() {
 		os.Exit(1)
 	}
 	fmt.Println(greeting)
-
-    fmt.Print("will insert neko")
-    err = insertWordToDB(dbpool, "猫")
-    fmt.Println("done inserting neko")
-    err = insertWordToDB(dbpool, "犬")
-    fmt.Println("done inserting inu")
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "Insert of word failed %v\n", err)
-        os.Exit(1)
-    }
-    fmt.Println("done inserting. proceeding to finding")
-
-
-    nekoID := findWordInDB(dbpool, "猫")
-    inuID := findWordInDB(dbpool, "犬")
-    fmt.Printf("neko %d, inu %d \n", nekoID, inuID)
-    err = insertLinkToDB(dbpool, inuID, nekoID);
-
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "Insert of link failed %v\n", err)
-        os.Exit(1)
-    }
-
-    err = insertLinkToDB(dbpool, inuID, nekoID);
-
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "Insert of link failed %v\n", err)
-        os.Exit(1)
-    }
-
-    err = insertWordToDB(dbpool, "女")
-    err = insertWordToDB(dbpool, "花")
-    // err = editWordInDB(dbpool, "女", "男")
-
-    var customErr *DuplicateWordErr
-    if errors.As(err, &customErr) {
-        fmt.Println("error")
-    }
-
-    words := [...]string{"女", "子供"}
-    err = insertWordsToDB(dbpool, words[:])
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "bulk insert of words failed %v\n", err)
-        os.Exit(1)
-    }
-
-    links := [...]Link{{ sourceWordID: 1, targetWordID: 2 }, { sourceWordID: 2, targetWordID: 1 }, { sourceWordID: 99, targetWordID: 100}}
-    err = insertLinksToDB(dbpool, links[:])
-
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "bulk insert of links failed %v\n", err)
-        os.Exit(1)
-    }
-
-
+    
     http.HandleFunc("/", handler)
     http.HandleFunc("/words", func(w http.ResponseWriter, r *http.Request){handleGetAllWords(w, r, dbpool)})
     http.HandleFunc("/links", func(w http.ResponseWriter, r *http.Request){handleGetAllLinks(w, r, dbpool)})
